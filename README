@@ -1,0 +1,10 @@
+aoc23 - Advent of Code 2023
+
+Written in Rust
+
+Usage: aoc23 <day> [options]
+  
+      Options:
+          --problem, -p   Print day's problem to solve
+          --version, -v   Print version string
+          --help, -h      Print this message

@@ -1,0 +1,165 @@
+name: ci
+permissions:
+  contents: write
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+env:
+  RUST_BACKTRACE: 1
+  GITHUB_TOKEN: ${{ github.token }}
+jobs:
+  build-info:
+    runs-on: ubuntu-24.04
+    outputs:
+      date: ${{ steps.info.outputs.date }}
+      commit_hash: ${{ steps.info.outputs.commit_hash }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get build info
+        id: info
+        shell: bash
+        run: |
+          echo "date=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+  
+  build:
+    needs: build-info
+    name: build (${{ matrix.platform.os }}, ${{ matrix.platform.arch }})
+    runs-on: ${{ matrix.platform.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: linux
+            arch: x86_64
+            runs-on: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: linux
+            arch: x86_64-musl
+            runs-on: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - os: linux
+            arch: aarch64
+            runs-on: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+          - os: linux
+            arch: aarch64-musl
+            runs-on: ubuntu-24.04
+            target: aarch64-unknown-linux-musl
+          - os: linux
+            arch: riscv64
+            runs-on: ubuntu-24.04
+            target: riscv64gc-unknown-linux-gnu
+          - os: linux
+            arch: powerpc64le
+            runs-on: ubuntu-24.04
+            target: powerpc64le-unknown-linux-gnu
+          - os: linux
+            arch: s390x
+            runs-on: ubuntu-24.04
+            target: s390x-unknown-linux-gnu
+          - os: windows
+            arch: x86_64-msvc
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows
+            arch: x86_64-gnu
+            runs-on: windows-latest
+            target: x86_64-pc-windows-gnu
+          - os: windows
+            arch: aarch64-msvc
+            runs-on: windows-latest
+            target: aarch64-pc-windows-msvc
+          - os: macos
+            arch: x86_64
+            runs-on: macos-latest 
+            target: x86_64-apple-darwin
+          - os: macos
+            arch: aarch64
+            runs-on: macos-latest
+            target: aarch64-apple-darwin
+          - os: freebsd
+            arch: x86_64
+            runs-on: ubuntu-24.04
+            target: x86_64-unknown-freebsd
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v1
+        env:
+          BUILD_DATE: ${{needs.build-info.outputs.date}}
+          COMMIT_HASH: ${{needs.build-info.outputs.commit_hash}}
+        with:
+          command: "build"
+          target: ${{ matrix.platform.target }}
+          args: "--locked --release"
+          strip: true
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aoc23-${{ matrix.platform.os }}-${{ matrix.platform.arch }}
+          path: |
+            target/${{ matrix.platform.target }}/release/aoc23${{ matrix.platform.os == 'windows' && '.exe' || '' }}
+            target/release/aoc23${{ matrix.platform.os == 'windows' && '.exe' || '' }}
+  
+  release:
+    needs: [build-info, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Prepare Release Files
+        run: |
+          mkdir -p releases
+          cd artifacts
+          for dir in */; do
+            binary_path=$(find "$dir" -type f -name "aoc23*" | head -n 1)
+            if [ -n "$binary_path" ]; then
+              target_name=${dir%/}
+              echo "Found binary at $binary_path for $target_name"
+              cp "$binary_path" "../releases/$(basename "$binary_path")"
+              (cd "../releases" && zip "${target_name}.zip" "$(basename "$binary_path")" && rm "$(basename "$binary_path")")
+            else
+              echo "No binary found in $dir"
+            fi
+          done
+      
+      - name: Delete all existing releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          api_url="https://api.github.com/repos/${{ github.repository }}/releases"
+          
+          releases=$(curl -H "Authorization: token $GITHUB_TOKEN" "$api_url")
+          
+          echo "$releases" | jq -c '.[]' | while read -r release; do
+            release_id=$(echo "$release" | jq -r '.id')
+            release_tag=$(echo "$release" | jq -r '.tag_name')
+            
+            echo "Deleting release: $release_id with tag: $release_tag"
+            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" "$api_url/$release_id"
+            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$release_tag"
+          done
+      
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: "aoc23-${{ needs.build-info.outputs.date }}-${{ needs.build-info.outputs.commit_hash }}"
+          tag: "aoc23-${{ needs.build-info.outputs.date }}-${{ needs.build-info.outputs.commit_hash }}"
+          draft: false
+          prerelease: false
+          artifacts: "releases/*.zip"
+          body: |
+            Automated release for aoc23
