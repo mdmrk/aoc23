@@ -1,7 +1,6 @@
 mod days;
 
 use std::{env, error::Error, fmt::Display, num::ParseIntError};
-include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 use days::get_problems;
 
@@ -31,7 +30,6 @@ impl Error for AocError {}
 #[derive(Debug)]
 struct AocArgs {
     show_problem: bool,
-    show_version: bool,
     help: bool,
     day: Option<usize>,
 }
@@ -40,7 +38,6 @@ fn parse_args() -> Result<AocArgs, AocError> {
     let args: Vec<String> = env::args().skip(1).collect();
     let mut aoc_args = AocArgs {
         show_problem: false,
-        show_version: false,
         help: false,
         day: None,
     };
@@ -53,8 +50,6 @@ fn parse_args() -> Result<AocArgs, AocError> {
             aoc_args.show_problem = true;
         } else if arg == "-h" || arg == "--help" {
             aoc_args.help = true;
-        } else if arg == "-v" || arg == "--version" {
-            aoc_args.show_version = true;
         } else {
             let day: usize = arg.parse()?;
             if day == 0 {
@@ -67,7 +62,6 @@ fn parse_args() -> Result<AocArgs, AocError> {
 }
 
 fn main() -> Result<(), AocError> {
-    let version = VERSION;
     let help_msg = "aoc23 - Advent of Code 2023
 
 Written in Rust
@@ -83,11 +77,6 @@ Usage: aoc23 <day> [options]
 
     if aoc_args.help {
         println!("{}", help_msg);
-        return Ok(());
-    }
-
-    if aoc_args.show_version {
-        println!("{}", version);
         return Ok(());
     }
 
