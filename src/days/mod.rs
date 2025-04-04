@@ -7,10 +7,10 @@ pub fn get_problems() -> Vec<Box<dyn Day>> {
 pub trait Day {
     fn problem(&self) -> &'static str;
     fn input(&self) -> &'static str;
-    fn part1(&self) -> Result<String, String> {
-        unimplemented!()
+    fn part1(&self, _: &String) -> Result<String, String> {
+        Ok("".to_string())
     }
-    fn part2(&self) -> Result<String, String> {
-        unimplemented!()
+    fn part2(&self, _: &String) -> Result<String, String> {
+        Ok("".to_string())
     }
 }

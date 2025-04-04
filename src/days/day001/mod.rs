@@ -9,8 +9,7 @@ impl Day for Day001 {
     fn input(&self) -> &'static str {
         include_str!("input.txt")
     }
-    fn part1(&self) -> Result<String, String> {
-        let input = self.input();
+    fn part1(&self, input: &String) -> Result<String, String> {
         let mut result: usize = 0;
 
         for line in input.lines() {
@@ -26,8 +25,8 @@ impl Day for Day001 {
         }
         Ok(result.to_string())
     }
-    fn part2(&self) -> Result<String, String> {
-        let input = self.input();
+
+    fn part2(&self, input: &String) -> Result<String, String> {
         let cloned_in = input.to_string();
         //         let cloned_in = "two1nine
         // eightwothree

@@ -1,6 +1,6 @@
 mod days;
 
-use std::{env, error::Error, fmt::Display, num::ParseIntError};
+use std::{env, error::Error, fmt::Display, fs, path::Path};
 
 use days::get_problems;
 
@@ -13,18 +13,6 @@ impl Display for AocError {
     }
 }
 
-impl From<ParseIntError> for AocError {
-    fn from(err: ParseIntError) -> Self {
-        AocError(err.to_string())
-    }
-}
-
-impl From<Box<dyn Error>> for AocError {
-    fn from(err: Box<dyn Error>) -> Self {
-        AocError(err.to_string())
-    }
-}
-
 impl Error for AocError {}
 
 #[derive(Debug)]
@@ -32,12 +20,14 @@ struct AocArgs {
     show_problem: bool,
     help: bool,
     day: Option<usize>,
+    input: Option<String>,
 }
 
 fn parse_args() -> Result<AocArgs, AocError> {
     let args: Vec<String> = env::args().skip(1).collect();
     let mut aoc_args = AocArgs {
         show_problem: false,
+        input: None,
         help: false,
         day: None,
     };
@@ -45,17 +35,37 @@ fn parse_args() -> Result<AocArgs, AocError> {
     if args.is_empty() {
         return Err(AocError("provide a day".to_string()));
     }
-    for arg in args.iter() {
-        if arg == "-p" || arg == "--program" {
-            aoc_args.show_problem = true;
-        } else if arg == "-h" || arg == "--help" {
-            aoc_args.help = true;
-        } else {
-            let day: usize = arg.parse()?;
-            if day == 0 {
-                return Err(AocError("day must be inside [1, 25]".to_string()));
+    let mut iter = args.iter();
+    loop {
+        match iter.next() {
+            Some(arg) => {
+                if arg.starts_with("-") {
+                    if arg == "-p" || arg == "--program" {
+                        aoc_args.show_problem = true;
+                    } else if arg == "-h" || arg == "--help" {
+                        aoc_args.help = true;
+                    } else if arg == "-i" || arg == "--input" {
+                        if aoc_args.input.is_some() {
+                            return Err(AocError("multiple inputs are not supported".to_string()));
+                        }
+                        let filepath = iter
+                            .next()
+                            .ok_or(AocError("specify input filename".to_string()))?;
+                        let path = Path::new(filepath);
+                        let contents = fs::read_to_string(path).unwrap();
+                        aoc_args.input = Some(contents);
+                    } else {
+                        return Err(AocError("invalid argument".to_string()));
+                    }
+                } else {
+                    let day: usize = arg.parse().unwrap();
+                    if day == 0 {
+                        return Err(AocError("day must be inside [1, 25]".to_string()));
+                    }
+                    aoc_args.day = Some(day);
+                }
             }
-            aoc_args.day = Some(day);
+            None => break,
         }
     }
     Ok(aoc_args)
@@ -93,15 +103,23 @@ Usage: aoc23 <day> [options]
         return Err(AocError("day not implemented".to_string()));
     }
 
+    let problem = &problems[i];
     if aoc_args.show_problem {
-        println!("{}", problems[i].problem());
+        println!("{}", problem.problem());
         return Ok(());
     }
 
-    let part1_result = problems[i].part1().map_err(|e| AocError(e.to_string()))?;
-    let part2_result = problems[i].part2().map_err(|e| AocError(e.to_string()))?;
+    let input: String = if aoc_args.input.is_some() {
+        aoc_args.input.unwrap()
+    } else {
+        problem.input().to_string()
+    };
+
+    let part1_result = problem.part1(&input).map_err(|e| AocError(e.to_string()))?;
+    let part2_result = problem.part2(&input).map_err(|e| AocError(e.to_string()))?;
 
     println!("Part 1: {}", part1_result);
     println!("Part 2: {}", part2_result);
+
     Ok(())
 }
