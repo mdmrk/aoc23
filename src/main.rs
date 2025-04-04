@@ -80,7 +80,7 @@ Usage: aoc23 <day> [options]
   
       Options:
           --problem, -p   Print day's problem to solve
-          --version, -v   Print version string
+          --input, -i     Set input for a problem
           --help, -h      Print this message
     ";
     let aoc_args = parse_args()?;
