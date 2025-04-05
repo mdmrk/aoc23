@@ -16,14 +16,13 @@ jobs:
   build-info:
     runs-on: ubuntu-24.04
     outputs:
-      date: ${{ steps.info.outputs.date }}
-      commit_hash: ${{ steps.info.outputs.commit_hash }}
+      version: ${{ steps.info.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - name: Get build info
         id: info
         shell: bash
-        run: echo "VERSION=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        run: echo "version=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
   
   build:
     needs: build-info
@@ -91,8 +90,7 @@ jobs:
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
         env:
-          BUILD_DATE: ${{needs.build-info.outputs.date}}
-          COMMIT_HASH: ${{needs.build-info.outputs.commit_hash}}
+          VERSION: ${{needs.build-info.outputs.version}}
         with:
           command: "build"
           target: ${{ matrix.platform.target }}
@@ -154,8 +152,8 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: "aoc23-${{ needs.build-info.outputs.date }}-${{ needs.build-info.outputs.commit_hash }}"
-          tag: "aoc23-${{ needs.build-info.outputs.date }}-${{ needs.build-info.outputs.commit_hash }}"
+          name: "aoc23-${{ needs.build-info.outputs.VERSION }}"
+          tag: "aoc23-${{ needs.build-info.outputs.VERSION }}"
           draft: false
           prerelease: false
           artifacts: "releases/*.zip"
