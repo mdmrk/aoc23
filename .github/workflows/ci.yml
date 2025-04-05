@@ -23,9 +23,7 @@ jobs:
       - name: Get build info
         id: info
         shell: bash
-        run: |
-          echo "date=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
-          echo "commit_hash=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+        run: echo "VERSION=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
   
   build:
     needs: build-info

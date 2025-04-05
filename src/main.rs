@@ -18,6 +18,7 @@ impl Error for AocError {}
 #[derive(Debug)]
 struct AocArgs {
     show_problem: bool,
+    show_version: bool,
     help: bool,
     day: Option<usize>,
     input: Option<String>,
@@ -27,6 +28,7 @@ fn parse_args() -> Result<AocArgs, AocError> {
     let args: Vec<String> = env::args().skip(1).collect();
     let mut aoc_args = AocArgs {
         show_problem: false,
+        show_version: false,
         input: None,
         help: false,
         day: None,
@@ -44,6 +46,8 @@ fn parse_args() -> Result<AocArgs, AocError> {
                         aoc_args.show_problem = true;
                     } else if arg == "-h" || arg == "--help" {
                         aoc_args.help = true;
+                    } else if arg == "-v" || arg == "--version" {
+                        aoc_args.show_version = true;
                     } else if arg == "-i" || arg == "--input" {
                         if aoc_args.input.is_some() {
                             return Err(AocError("multiple inputs are not supported".to_string()));
@@ -72,6 +76,7 @@ fn parse_args() -> Result<AocArgs, AocError> {
 }
 
 fn main() -> Result<(), AocError> {
+    let version = option_env!("VERSION").unwrap_or("unknown");
     let help_msg = "aoc23 - Advent of Code 2023
 
 Written in Rust
@@ -80,6 +85,7 @@ Usage: aoc23 <day> [options]
   
       Options:
           --problem, -p          Print day's problem to solve
+          --version, -v          Print program version
           --input, -i <file>     Set input for a problem
           --help, -h             Print this message
     ";
@@ -87,6 +93,11 @@ Usage: aoc23 <day> [options]
 
     if aoc_args.help {
         println!("{}", help_msg);
+        return Ok(());
+    }
+
+    if aoc_args.show_version {
+        println!("{}", version);
         return Ok(());
     }
 
