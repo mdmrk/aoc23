@@ -1,7 +1,8 @@
 pub mod day001;
+pub mod day002;
 
 pub fn get_problems() -> Vec<Box<dyn Day>> {
-    vec![Box::new(day001::Day001)]
+    vec![Box::new(day001::Day001), Box::new(day002::Day002)]
 }
 
 pub trait Day {
