@@ -1,4 +1,3 @@
-use std::ops::Index;
 
 use crate::days::Day;
 
@@ -73,7 +72,7 @@ impl Day for Day003 {
     }
 
     fn part2(&self, input: &String) -> Result<String, String> {
-        let mut result: usize = 0;
+        let result: usize = 0;
 
         let rows = input.chars().map(|c| if c.is_numeric() { c } else { '\0' });
         println!("{:?}", rows);

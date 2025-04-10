@@ -88,7 +88,7 @@ impl Day for Day005 {
     }
 
     fn part2(&self, input: &String) -> Result<String, String> {
-        let mut result: usize = 0;
+        let result: usize = 0;
 
         Ok(result.to_string())
     }
