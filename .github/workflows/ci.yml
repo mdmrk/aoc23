@@ -53,6 +53,10 @@ jobs:
             runs-on: ubuntu-24.04
             target: riscv64gc-unknown-linux-gnu
           - os: linux
+            arch: riscv64
+            runs-on: ubuntu-24.04
+            target: riscv64gc-unknown-linux-musl
+          - os: linux
             arch: powerpc64le
             runs-on: ubuntu-24.04
             target: powerpc64le-unknown-linux-gnu
