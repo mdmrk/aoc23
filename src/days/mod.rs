@@ -7,6 +7,8 @@ pub mod day006;
 pub mod day007;
 pub mod day008;
 pub mod day009;
+pub mod day010;
+pub mod day011;
 
 pub fn get_problems() -> Vec<Box<dyn Day>> {
     vec![
@@ -19,6 +21,8 @@ pub fn get_problems() -> Vec<Box<dyn Day>> {
         Box::new(day007::Day007),
         Box::new(day008::Day008),
         Box::new(day009::Day009),
+        Box::new(day010::Day010),
+        Box::new(day011::Day011),
     ]
 }
 
